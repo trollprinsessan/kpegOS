@@ -266,12 +266,18 @@
 <script>
 const BASE="https://kpeg.se/";
 const P=[
+  {t:"The Token Toll",c:"Tool",what:"AI environmental cost calculator",client:"Self-initiated",s:"Vanilla JS · HTML Canvas",img:"token%20toll.gif",
+   d:"An in-browser calculator that measures the real environmental cost of AI usage — water, energy and CO₂ per prompt. No server, no uploads; just published benchmarks and verified data to put a number on what each query actually draws from the planet."},
+  {t:"RiRi",c:"Site",what:"Restaurant website",client:"RiRi · Bio Rio, Stockholm",s:"Framer · Bokabord integration",img:"images/riri.png",
+   d:"A photography-led, menu-forward site for RiRi, the restaurant inside Stockholm's Bio Rio, with live table booking wired in through Bokabord. Built fast as a side gig - a real client with a real deadline."},
+  {t:"Gif-Generators",c:"Tool",what:"Text-to-GIF toolkit",client:"Norrsken Foundation",s:"JavaScript · HTML Canvas",img:"new-thumbs/gif-generators.gif",
+   d:"Seven in-browser text-to-GIF tools built for Norrsken's creative team so they can make animated motion-text themselves - fully client-side, no designer pulled into every small request. A small team made faster, which is most of the job."},
+  {t:"Second Brain",c:"System",what:"AI-readable knowledge vault",client:"Self-initiated",s:"Git · Obsidian · Intel NUC",img:"new-thumbs/second-brain.jpeg",
+   d:"A version-controlled, AI-readable knowledge vault - the memory layer his agents read from. Plain markdown files under git on a home NUC, so the system that remembers is something he fully owns and can diff."},
   {t:"kp-cards",c:"App",what:"Trading-card collector",client:"Self-initiated",s:"Next.js · WebGL · SQLite FTS5",img:"images/kp-cards.gif",
    d:"A browser interface for collecting trading cards across multiple TCGs. Cards tilt and gloss in 3D, stack into drag-and-drop piles, and can be held side-by-side at true physical size - the whole tactile ritual of collecting, rebuilt on the web."},
   {t:"Pile",c:"Tool",what:"Self-hosted reference board",client:"Self-initiated",s:"Next.js · Tailwind · SQLite · Framer Motion",img:"images/pile.gif",
    d:"A self-hosted board for catching visual inspiration in one place instead of scattered across Pinterest, Are.na and a dozen open tabs. Drag-and-drop, tag and share references; runs on a home ARM64 server so the data stays his."},
-  {t:"Gif-Generators",c:"Tool",what:"Text-to-GIF toolkit",client:"Norrsken Foundation",s:"JavaScript · HTML Canvas",img:"new-thumbs/gif-generators.gif",
-   d:"Seven in-browser text-to-GIF tools built for Norrsken's creative team so they can make animated motion-text themselves - fully client-side, no designer pulled into every small request. A small team made faster, which is most of the job."},
   {t:"Nina Watching",c:"Live",what:"Real-time media tracker",client:"Personal",s:"Next.js · Postgres · Jellyfin API",img:"images/nina-watching.gif",
    d:"A live widget showing whatever Nina is watching on the home media server in real time, backed by Jellyfin. Equal parts useful and affectionate - a piece of ambient, personal software."},
   {t:"Jobb-agent",c:"Agent",what:"Autonomous job-application agent",client:"Self-initiated",s:"Bun · TypeScript · Hono · Claude API",img:"images/jobbtrackarn.gif",
@@ -286,16 +292,12 @@ const P=[
    d:"A deliberately 90s-flavoured joke site made for friends in the in-ear-monitor community - fast, silly and lovingly low-fi. Real brief, real friends, no pretension."},
   {t:"Photos",c:"Portfolio",what:"Photo portfolio & print shop",client:"Self-initiated",s:"Next.js · Tailwind v4 · Framer Motion",img:"images/photosv2.jpg",
    d:"A photography portfolio and print shop built on a single rule: nothing on the page but images and prices. A masonry of work, DM Mono captions and a checkout - restraint as the whole concept."},
-  {t:"RiRi",c:"Site",what:"Restaurant website",client:"RiRi · Bio Rio, Stockholm",s:"Framer · Bokabord integration",img:"images/riri.png",
-   d:"A photography-led, menu-forward site for RiRi, the restaurant inside Stockholm's Bio Rio, with live table booking wired in through Bokabord. Built fast as a side gig - a real client with a real deadline."},
   {t:"IEMdb",c:"Database",what:"In-ear-monitor database",client:"Self-initiated",s:"Next.js · TypeScript · Tailwind",img:"images/iemdb.gif",
    d:"A filterable database of in-ear monitors for the audio-obsessed, with specs, frequency graphs and a custom fit-scoring system that predicts how well a given shell will physically sit in your ear. A niche made searchable."},
-  {t:"Second Brain",c:"System",what:"AI-readable knowledge vault",client:"Self-initiated",s:"Git · Obsidian · Intel NUC",img:"new-thumbs/second-brain.jpeg",
-   d:"A version-controlled, AI-readable knowledge vault - the memory layer his agents read from. Plain markdown files under git on a home NUC, so the system that remembers is something he fully owns and can diff."},
 ];
-const URLS={"kp-cards":"projects/kp-cards/","Pile":"projects/pile/","Gif-Generators":"nina/gif-generators/","Nina Watching":"projects/nina-watching/","Jobb-agent":"projects/jobb-agent/","Brooke Colorhan":"projects/brooke-colorhan/","Connect Four":"projects/connect-four/","Time Squares":"projects/time-squares/","Calles Hearing Loures":"projects/calleshearingloures/","Photos":"photos/","RiRi":"https://fine-goal-048989.framer.app/","IEMdb":"projects/iemdb/","Second Brain":"second-brain-guide/"};
-P.forEach((p,i)=>{const u=URLS[p.t]||"";p.url=u.startsWith("http")?u:BASE+u;p.idx=i;});
-const FEAT=[1,0,2,4,11];
+const URLS={"kp-cards":"projects/kp-cards/","Pile":"projects/pile/","Gif-Generators":"nina/gif-generators/","Nina Watching":"projects/nina-watching/","Jobb-agent":"projects/jobb-agent/","Brooke Colorhan":"projects/brooke-colorhan/","Connect Four":"projects/connect-four/","Time Squares":"projects/time-squares/","Calles Hearing Loures":"projects/calleshearingloures/","Photos":"photos/","RiRi":"https://fine-goal-048989.framer.app/","IEMdb":"projects/iemdb/","Second Brain":"second-brain-guide/","The Token Toll":"the-token-toll/"};
+P.forEach((p,i)=>{const u=URLS[p.t]||"";p.url=u.startsWith("http")?u:BASE+u;p.idx=i;p.thumb=p.img?(p.img.startsWith("http")||!p.img.includes("/")?p.img:BASE+p.img):""});
+const FEAT=[0,1,2,3];
 
 /* BOOT */
 (function(){const b=document.getElementById("boot");const end=()=>{b.classList.add("done");document.dispatchEvent(new CustomEvent("bootdone"));};setTimeout(end,2100);b.addEventListener("click",end,{once:true});})();
@@ -366,9 +368,9 @@ document.getElementById("win-cv").style.display="none";
 win("about","About _Patrick.txt",`
   <div class="doc">
     <h1>Patrick<br>Gårdinger</h1>
-    <div class="role">design engineer · sthlm</div>
-    <p>Design engineer building AI-native products end to end.</p>
+    <p style="line-height:1.2"><span class="cl">Design engineer based in Stockholm, building AI-native products end to end.</span></p>
     <p><span class="cl">Clients include:</span> Rio, Norrsken, Hyper Island, Ljudbang, Coya, Bleech, RiRi.<span class="cur"></span></p>
+    <p><span class="cl">Services:</span><br>Web design &amp; UX/UI<br>Frontend development<br>AI-native products<br>AI automations &amp; workflows<br>Design systems</p>
   </div>`,24,24,"about");
 
 /* Selected Work - filterable index */
@@ -393,7 +395,7 @@ makeResizable(sw,380,300);
         search=sw.querySelector("#ixSearch"),reset=sw.querySelector("#ixReset");
   const isClient=p=>!(p.client==="Self-initiated"||p.client==="Personal");
   const rowHTML=p=>`<div class="ixrow">
-    <div class="ixthumb"><img src="${BASE+p.img}" alt="${p.t}" loading="lazy"></div>
+    <div class="ixthumb"><img src="${p.thumb}" alt="${p.t}" loading="lazy"></div>
     <div class="ixmain">
       <div class="ixtop"><h3>${p.t}</h3><span class="what">${p.what}</span></div>
       <p class="ixdesc">${p.d}</p>
@@ -414,7 +416,7 @@ makeResizable(sw,380,300);
       if(q&&!((p.t+" "+p.what+" "+p.s+" "+p.client+" "+p.d).toLowerCase().includes(q)))return false;
       return true;
     });
-    f.sort((a,b)=>(isClient(b)-isClient(a))||a.idx-b.idx);   // client work first
+    f.sort((a,b)=>a.idx-b.idx);
     list.innerHTML=f.length?f.map(rowHTML).join(""):`<div class="ixempty">No projects match.<br><b id="ixClear">Clear filters ↺</b></div>`;
     const clr=list.querySelector("#ixClear");if(clr)clr.addEventListener("click",doReset);
   }
@@ -425,7 +427,7 @@ makeResizable(sw,380,300);
 /* project detail windows */
 const projOpened={};
 function openProject(i){const id="proj"+i;if(projOpened[id]){openWin(id);return;}projOpened[id]=true;const p=P[i];
-  win(id,p.t,`<div class="ft"><img src="${BASE+p.img}" alt="${p.t}"></div>
+  win(id,p.t,`<div class="ft"><img src="${p.thumb}" alt="${p.t}"></div>
     <div class="txt"><h3>${p.t}</h3><div class="cat">${p.what}</div>
       <div class="meta2">Client - ${p.client}<br>Tech - ${p.s}</div>
       <p>${p.d}</p><a class="visit" href="${p.url}" target="_blank" rel="noopener">Open project ↗</a></div>`,150+(i%5)*26,150+(i%5)*22,"proj");}
@@ -512,7 +514,7 @@ const c4=win("c4","Connect Four",`<div class="grid" id="c4grid"></div><div class
 })();
 
 /* featured project app icons */
-const APPS=FEAT.map(i=>{const el=icon(P[i].t,"ic-app",()=>openProject(i));el.classList.add("app");el.querySelector(".ic-app").innerHTML=`<img src="${BASE+P[i].img}" alt="${P[i].t}">`;return el;});
+const APPS=FEAT.map(i=>{const el=icon(P[i].t,"ic-app",()=>openProject(i));el.classList.add("app");el.querySelector(".ic-app").innerHTML=`<img src="${P[i].thumb}" alt="${P[i].t}">`;return el;});
 function placeIcons(){const RW=desk.clientWidth,RH=desk.clientHeight;APPS.forEach((el,i)=>{el.style.left=(RW-96)+"px";el.style.top=(24+i*92)+"px";});
   const c4=document.getElementById("win-c4");if(c4){c4.style.left=Math.max(360,RW-300)+"px";c4.style.top="60px";}}
 placeIcons();anchorAsk();addEventListener("resize",()=>{clearTimeout(window._ri);window._ri=setTimeout(()=>{placeIcons();anchorAsk();},160);});
