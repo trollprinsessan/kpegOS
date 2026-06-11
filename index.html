@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kpegOS - Patrick Gårdinger</title>
+<style>
+  :root{
+    --ink:#15171a;
+    --paper:#ffffff;
+    --desk:#c5c9ce;
+    --line:#15171a;
+    --line2:#e6e8ea;
+    --soft:#dde0e3;
+    --grey:#797f87;
+    --red:#ED3E22;
+    --ui:Arial,"Helvetica Neue",Helvetica,sans-serif;
+    --display:"Arial Black",Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:var(--ui);font-size:12px;color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased;line-height:1.45;
+    background-color:var(--desk);
+    background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px);background-size:13px 13px;user-select:none}
+  #bgvid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none}
+  ::selection{background:var(--ink);color:#fff}
+  img{display:block;max-width:100%}
+  a{color:inherit}
+  button,input{font-family:inherit}
+
+  /* BOOT */
+  #boot{position:fixed;inset:0;z-index:3000;background:#fff;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .55s ease}
+  #boot.done{opacity:0;pointer-events:none}
+  #boot .logo{font-family:var(--display);font-weight:900;font-size:44px;letter-spacing:-.04em}
+  #boot .logo span{color:var(--red)}
+  #boot .bar{width:220px;height:7px;border:1px solid var(--ink)}
+  #boot .bar i{display:block;height:100%;background:var(--ink);width:0;animation:load 1.7s cubic-bezier(.6,0,.3,1) forwards}
+  @keyframes load{to{width:100%}}
+  #boot .sub{font-size:10px;color:var(--grey);letter-spacing:.18em;text-transform:uppercase}
+
+  /* MENU BAR */
+  .menubar{position:fixed;top:0;left:0;right:0;height:23px;z-index:1000;background:#fff;border-bottom:1px solid var(--ink);display:flex;align-items:center;gap:2px;padding:0 8px;font-size:12px}
+  .menubar .apple{font-size:13px;padding:0 6px}
+  .menubar .mi{padding:1px 9px;border-radius:0;cursor:default;letter-spacing:.01em}
+  .menubar .mi.brand{font-family:var(--display);font-weight:900}
+  .menubar .mi:hover{background:var(--ink);color:#fff}
+  .menubar .mi.has-drop{position:relative}
+  .menubar .mi.has-drop:focus-within,.menubar .mi.has-drop.open{background:var(--ink);color:#fff}
+  .menubar .drop{display:none;position:absolute;top:100%;left:0;min-width:160px;background:#fff;border:1px solid var(--ink);border-top:0;z-index:2000}
+  .menubar .mi.has-drop.open .drop{display:block}
+  .menubar .drop a{display:block;padding:5px 12px;font-size:12px;color:var(--ink);text-decoration:none;white-space:nowrap}
+  .menubar .drop a:hover{background:var(--ink);color:#fff}
+  .menubar .spacer{flex:1}
+  .menubar .snd{padding:0 9px;cursor:pointer;border-radius:0}
+  .menubar .snd:hover{background:var(--ink);color:#fff}
+  .menubar .clock{padding:0 8px;font-variant-numeric:tabular-nums}
+
+  .desktop{position:fixed;top:23px;left:0;right:0;bottom:0;overflow:hidden}
+
+  /* ICONS */
+  .dicon{position:absolute;width:80px;text-align:center;cursor:grab}
+  .dicon.grab{cursor:grabbing}
+  .dicon .glyph{width:52px;height:46px;margin:0 auto;position:relative}
+  .dicon .lbl{margin-top:4px;font-size:11px;line-height:1.05;display:inline-block;padding:1px 4px;color:#1d2024;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .dicon.sel .lbl{background:var(--ink);color:#fff;text-shadow:none}
+  .ic-app{width:46px;height:46px;border:1px solid var(--ink);border-radius:0;overflow:hidden;background:#fff;margin:0 auto;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+  .ic-app img{width:100%;height:100%;object-fit:cover}
+  .dicon.app .lbl{font-weight:bold}
+
+  /* WINDOWS */
+  .win{position:absolute;background:#fff;border:1px solid var(--ink);border-radius:0;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.20)}
+  .win.opening{animation:winin .16s ease}
+  @keyframes winin{from{transform:scale(.97);opacity:.4}to{transform:scale(1);opacity:1}}
+  .win.popin{animation:popin .46s cubic-bezier(.2,.7,.3,1.35);transform-origin:bottom right}
+  @keyframes popin{0%{transform:translateY(28px) scale(.88);opacity:0}55%{transform:translateY(-5px) scale(1.02);opacity:1}100%{transform:translateY(0) scale(1)}}
+  .win .tb{height:26px;border-bottom:1px solid var(--ink);display:flex;align-items:center;position:relative;cursor:grab;background:#f4f5f6}
+  .win .tb.grab{cursor:grabbing}
+  .win.anchored .tb{cursor:default}
+  .win.inactive .tb{background:#fafafa;color:#999}
+  .win .tb .close{width:14px;height:14px;border:1px solid var(--ink);background:#fff;margin-right:9px;position:relative;z-index:2;cursor:pointer;display:grid;place-items:center;font-size:12px;line-height:1;color:var(--ink)}
+  .win .tb .close:hover{background:var(--red);color:#fff}
+  .win .tb .title{position:relative;z-index:2;margin:0 auto;padding:0 10px;font-weight:700;font-size:12.5px;letter-spacing:-.02em;white-space:nowrap}
+  .win .tb .pad{width:13px;margin-left:9px}
+  .win.inactive .tb .title{font-weight:bold}
+  .win .body{overflow:hidden}
+
+  /* About */
+  .about{width:316px}
+  .about .body{padding:0;line-height:1.5}
+  .about .txtbar{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--line2);background:#fafafa;font-family:var(--display);font-weight:900;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey)}
+  .about .txtbar .mod{color:var(--red)}
+  .about .doc{padding:17px 16px}
+  .about h1{font-family:var(--display);font-weight:900;font-size:31px;line-height:.94;letter-spacing:-.03em;margin-bottom:7px}
+  .about .role{font-size:10px;color:var(--grey);margin-bottom:13px;letter-spacing:.06em;text-transform:uppercase}
+  .about p{font-size:12px;line-height:1.62;margin-bottom:11px}
+  .about p:last-child{margin-bottom:0}
+  .about .cl{font-family:var(--display);font-weight:900}
+  .about .cur{display:inline-block;width:7px;height:14px;background:var(--ink);margin-left:2px;vertical-align:-2px;animation:cblink 1.05s steps(1) infinite}
+  @keyframes cblink{50%{opacity:0}}
+  .about .txtstatus{padding:6px 14px;border-top:1px solid var(--ink);background:#fafafa;font-family:var(--display);font-weight:900;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);display:flex;justify-content:space-between}
+
+  /* Photos gallery */
+  .fm{width:300px;max-width:300px}
+  .fm .scr{position:relative;aspect-ratio:3/2;background:#15171a;overflow:hidden;border-bottom:1px solid var(--ink);cursor:pointer}
+  .fm .scr img{width:100%;height:100%;object-fit:cover;object-position:50% 78%}
+  .fm .scr .static{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;z-index:4;image-rendering:pixelated;transition:opacity .07s}
+  .fm .scr.noimg img{opacity:0}
+  .fm .ph{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:18px;color:#eceef0;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.025em;line-height:1.05}
+  .fm .scr.noimg .ph{display:flex}
+  .fm .scr.noimg::after{content:"photo unavailable";position:absolute;bottom:9px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#6b6f76}
+  .fm .onair{position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px}
+  .fm .onair .dot{width:8px;height:8px;border-radius:50%;background:#5a5a5a}
+  .fm.playing .onair .dot{background:var(--red);animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .fm canvas{display:block;width:100%;height:48px;background:#0e0f11;border-bottom:1px solid var(--ink)}
+  .fm .meta{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line2)}
+  .fm .meta .nm{font-family:var(--display);font-weight:900;font-size:16px;letter-spacing:-.015em}
+  .fm .meta .ct{font-size:10px;color:var(--grey);white-space:nowrap}
+  .fm .ctrls{display:flex}
+  .fm .ctrls button{flex:1;border:0;border-right:1px solid var(--line2);background:#fff;padding:6px;font-size:12px;cursor:pointer}
+  .fm .ctrls button:last-child{border-right:0}
+  .fm .ctrls button:hover{background:#f4f5f6}
+  .fm .ctrls button.play{font-family:var(--display);font-weight:900;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:2}
+  .fm .ctrls button.play.on{background:var(--red);color:#fff}
+  .fm .note{padding:8px 12px;font-size:9px;color:var(--grey);text-transform:uppercase;letter-spacing:.05em;text-align:center}
+
+  /* Selected Work - filterable index */
+  .finder{width:592px;height:548px;display:flex;flex-direction:column;min-width:360px;min-height:300px}
+  .finder>.body{flex:1;min-height:0;display:flex;flex-direction:column}
+  .win .rgrip{position:absolute;right:1px;bottom:1px;width:16px;height:16px;cursor:nwse-resize;z-index:6;background:repeating-linear-gradient(135deg,transparent 0 2px,var(--ink) 2px 3px,transparent 3px 5px)}
+  .ixtools{padding:11px 12px;border-bottom:1px solid var(--ink);display:flex;flex-direction:column;gap:8px;background:#f4f5f6}
+  .ixtools .trow{display:flex;gap:8px}
+  /* Capsule Plaza-style controls */
+  .capsel{flex:1;display:flex;align-items:stretch;border:1px solid #c2c6ca;border-radius:7px;overflow:hidden;background:#fff;height:32px;min-width:0}
+  .capsel .lbl{flex:1;display:flex;align-items:center;padding:0 12px;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .capsel .step{display:flex;flex-direction:column;width:26px;flex:0 0 26px;background:var(--red);border-left:1px solid #c2c6ca}
+  .capsel .step button{flex:1;border:0;background:transparent;color:#fff;cursor:pointer;font-size:8px;line-height:1;display:grid;place-items:center;padding:0}
+  .capsel .step button:hover{background:rgba(0,0,0,.18)}
+  .capsel .step .up{border-bottom:1px solid rgba(255,255,255,.4)}
+  .ixsearch{flex:1;min-width:0;border:1px solid #c2c6ca;border-radius:7px;height:32px;padding:0 12px;font-size:11.5px;outline:none;background:#fff}
+  .ixsearch:focus{border-color:var(--ink)}
+  .ixreset{border:1px solid #c2c6ca;border-radius:7px;background:#fff;font-size:10px;text-transform:uppercase;padding:0 13px;cursor:pointer}
+  .ixreset:hover{border-color:var(--ink)}
+  .ixcount{font-size:10px;color:var(--grey);display:flex;align-items:center;padding:0 4px;white-space:nowrap}
+  /* index column header + rows */
+  .ixhead{display:grid;grid-template-columns:64px 1fr 178px;gap:14px;padding:8px 14px;border-bottom:1px solid var(--ink);background:#fafafa;
+    font-family:var(--display);font-weight:900;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey)}
+  .ixlist{flex:1;min-height:0;overflow-y:auto}
+  .ixrow{display:grid;grid-template-columns:128px 1fr 170px;gap:16px;padding:16px 14px;border-bottom:1px solid var(--line2);align-items:start}
+  .ixrow:last-child{border-bottom:0}
+  .ixthumb{width:128px;height:128px;flex:0 0 128px;border:1px solid var(--ink);overflow:hidden;background:#fff}
+  .ixthumb img{width:100%;height:100%;object-fit:cover}
+  .ixmain{min-width:0}
+  .ixtop{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:3px}
+  .ixtop h3{font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:-.02em;line-height:1}
+  .ixtop .what{font-size:9px;color:var(--grey);text-transform:uppercase;letter-spacing:.05em}
+  .ixdesc{font-size:11px;line-height:1.5;color:#2c2c2c;margin-top:7px}
+  .ixmeta{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding-left:2px;min-width:0}
+  .ixmeta .mk{display:block;font-family:var(--display);font-weight:900;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);margin-bottom:3px}
+  .ixmeta .mv{font-size:11px;line-height:1.35}
+  .ixmeta .client .mv{font-weight:bold}
+  .ixmeta .tag{display:inline-block;margin-top:8px;font-family:var(--display);font-weight:900;font-size:8px;text-transform:uppercase;letter-spacing:.06em;background:var(--red);color:#fff;padding:2px 6px}
+  .ixlink{display:inline-block;margin-top:10px;font-family:var(--display);font-weight:900;font-size:9px;text-transform:uppercase;letter-spacing:.06em;background:var(--red);color:#fff;padding:4px 9px;text-decoration:none}
+  .ixlink:hover{filter:brightness(.92);color:#fff}
+  .ixempty{padding:34px 14px;text-align:center;font-size:11px;color:var(--grey)}
+  .ixempty b{cursor:pointer;color:var(--red);text-decoration:underline}
+  .cta{display:block;text-align:center;background:var(--red);color:#fff;font-family:var(--display);font-weight:900;font-size:13px;padding:12px;text-decoration:none}
+  .cta:hover{filter:brightness(.92)}
+
+  /* CV / Experience window */
+  .cv{width:340px}
+  .cv .body{padding:0}
+  .cv .cvrow{padding:14px 16px;border-bottom:1px solid var(--line2)}
+  .cv .cvrow:last-child{border-bottom:0}
+  .cv .cvco{font-family:var(--display);font-weight:900;font-size:13px;letter-spacing:-.02em;margin-bottom:1px}
+  .cv .cvti{font-size:11px;color:var(--grey);margin-bottom:5px}
+  .cv .cvti b{color:var(--ink);font-weight:bold}
+  .cv .cvde{font-size:11px;line-height:1.55;color:#2c2c2c}
+
+  /* project detail window */
+  .proj{width:250px}
+  .proj .ft{width:100%;aspect-ratio:1/1;border-bottom:1px solid var(--ink);overflow:hidden;background:#fff}
+  .proj .ft img{width:100%;height:100%;object-fit:cover}
+  .proj .txt{padding:12px}
+  .proj h3{font-family:var(--display);font-weight:900;font-size:18px;letter-spacing:-.02em;margin-bottom:5px}
+  .proj .cat{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--grey);margin-bottom:8px}
+  .proj .meta2{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .proj p{font-size:12px;line-height:1.5;margin-bottom:9px}
+  .proj .visit{display:inline-block;font-size:11px;border-bottom:1px solid var(--ink);text-decoration:none}
+
+  /* Ask Patrick */
+  .chat{width:288px}
+  .chat .msgs{height:180px;overflow-y:auto;padding:10px 11px;background:#fff}
+  .chat .m{margin-bottom:10px}
+  .chat .m .who{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);margin-bottom:2px}
+  .chat .m.u{text-align:right}
+  .chat .bubble{display:inline-block;max-width:88%;text-align:left;padding:6px 9px;border:1px solid var(--soft);border-radius:0;font-size:11.5px;line-height:1.45}
+  .chat .m.u .bubble{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chat .bubble a{color:inherit;text-decoration:underline}
+  .chat .chips{display:flex;flex-wrap:wrap;gap:4px;padding:0 11px 9px}
+  .chat .qchip{font-size:9px;border:1px solid var(--soft);padding:3px 6px;cursor:pointer;color:var(--grey)}
+  .chat .qchip:hover{border-color:var(--ink);color:var(--ink)}
+  .chat .inp{display:flex;border-top:1px solid var(--line2)}
+  .chat .inp input{flex:1;min-width:0;border:0;padding:9px 11px;font-size:11px;outline:none;background:#fff}
+  .chat .inp button{border:0;border-left:1px solid var(--line2);background:#fff;padding:0 14px;font-family:var(--display);font-weight:900;font-size:11px;cursor:pointer}
+  .chat .inp button:hover{background:var(--ink);color:#fff}
+
+  /* Puzzle */
+  .c4w{width:176px}
+  .c4w .body{padding:9px}
+  .c4w .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:#1763cf;padding:5px;border:1px solid var(--ink)}
+  .c4w .cell{aspect-ratio:1/1;display:grid;place-items:center;cursor:pointer;position:relative}
+  .c4w .cell::before{content:"";width:80%;height:80%;background:#fff;box-shadow:inset 0 1px 2px rgba(0,0,0,.28)}
+  .c4w .cell:hover::before{background:#e9f0fb}
+  .c4w .disc{position:absolute;top:10%;left:10%;width:80%;height:80%;box-shadow:inset 0 -2px 3px rgba(0,0,0,.28)}
+  .c4w .disc.a{background:#e6362b}
+  .c4w .disc.b{background:#f6c324}
+  .c4w .cap{margin-top:8px;display:flex;justify-content:space-between;font-size:10px;color:var(--grey)}
+  .c4w .cap b{cursor:pointer;color:var(--ink)}
+  .c4w .cap .win{color:var(--red);font-family:var(--display);font-weight:900;text-transform:uppercase}
+
+  /* DOCK */
+  .dock{position:fixed;bottom:11px;left:50%;transform:translateX(-50%);z-index:900;display:flex;gap:6px;background:#fff;border:1px solid var(--ink);padding:6px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  .dock .dsep{width:1px;background:var(--ink);align-self:stretch;margin:0 4px}
+  .dock .dcontact{display:flex;align-items:center;padding:0 22px;background:var(--red);color:#fff;border:1px solid var(--ink);font-family:var(--display);font-weight:900;font-size:14px;text-decoration:none;cursor:pointer;transition:transform .12s}
+  .dock .dcontact:hover{filter:brightness(.93);transform:translateY(-4px)}
+  .dock button{width:54px;height:46px;border:1px solid var(--soft);background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform .12s}
+  .dock button:hover{border-color:var(--ink);transform:translateY(-4px)}
+  .dock button .g{font-family:var(--display);font-weight:900;font-size:13px}
+  .dock button .n{font-size:8px;text-transform:uppercase;letter-spacing:.04em;color:var(--grey)}
+
+  /* ALL-IN ARIAL: Black for titles + tags, regular for body */
+  .role,.ixtop .what,.ixmeta .mk,.ixhead,.ixcount,.ixreset,.ixlink,
+  .fm .meta .ct,.fm .note,.dock button .n,.proj .cat,.proj .meta2,
+  .c4w .cap,.c4w .cap b,.chat .m .who,.menubar .clock{font-family:var(--display)}
+
+  @media(max-width:760px){
+    body{overflow:auto}
+    .desktop{position:static;height:auto;padding-bottom:80px}
+    .win,.dicon{position:static !important;margin:10px auto;width:92% !important;animation:none}
+    .dock{transform:translateX(-50%) scale(.92)}
+  }
+</style>
+</head>
+<body>
+
+<video id="bgvid" src="Background_patrick.mp4" autoplay loop muted playsinline></video>
+
+<div id="boot">
+  <div class="logo">kpeg<span>OS</span></div>
+  <div class="bar"><i></i></div>
+  <div class="sub">starting up · v2.4</div>
+</div>
+
+<div class="menubar">
+  <span class="apple"></span>
+  <span class="mi brand">kpegOS</span>
+  <span class="mi has-drop" id="menuFile">File<div class="drop"><a href="#" id="menuCvLink">Experience…</a></div></span><span class="mi has-drop" id="menuEdit">Edit<div class="drop"><a href="#" style="pointer-events:none;opacity:.45;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding-bottom:2px">Education</a><a href="#" onclick="return false" style="cursor:default;border-top:1px solid var(--line2);padding-top:6px">Full Stack Dev · Spiced Academy<br><span style="font-size:9px;color:var(--grey)">Mar – Jun 2018</span></a><a href="#" onclick="return false" style="cursor:default">Digital Strategy · Hyper Island<br><span style="font-size:9px;color:var(--grey)">Aug 2013 – Dec 2014</span></a><a href="#" onclick="return false" style="cursor:default">Podcast Production · Medieinstitutet<br><span style="font-size:9px;color:var(--grey)">Aug 2023 – Jun 2024</span></a><a href="#" onclick="return false" style="cursor:default">Prep Architecture · Arkitekturskolan<br><span style="font-size:9px;color:var(--grey)">Aug 2009 – Jun 2010</span></a></div></span><span class="mi has-drop" id="menuView">View<div class="drop"><a href="https://www.linkedin.com/in/patrickeg/" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://www.instagram.com/mobilasektionen/" target="_blank" rel="noopener">Instagram ↗</a></div></span><span class="mi" id="menuSpecial">Special</span>
+  <span class="spacer"></span>
+  <span class="clock" id="clock">--:-- --</span>
+</div>
+
+<div class="desktop" id="desktop"></div>
+
+<div class="dock" id="dock"></div>
+
+<script>
+const BASE="https://kpeg.se/";
+const P=[
+  {t:"kp-cards",c:"App",what:"Trading-card collector",client:"Self-initiated",s:"Next.js · WebGL · SQLite FTS5",img:"images/kp-cards.gif",
+   d:"A browser interface for collecting trading cards across multiple TCGs. Cards tilt and gloss in 3D, stack into drag-and-drop piles, and can be held side-by-side at true physical size - the whole tactile ritual of collecting, rebuilt on the web."},
+  {t:"Pile",c:"Tool",what:"Self-hosted reference board",client:"Self-initiated",s:"Next.js · Tailwind · SQLite · Framer Motion",img:"images/pile.gif",
+   d:"A self-hosted board for catching visual inspiration in one place instead of scattered across Pinterest, Are.na and a dozen open tabs. Drag-and-drop, tag and share references; runs on a home ARM64 server so the data stays his."},
+  {t:"Gif-Generators",c:"Tool",what:"Text-to-GIF toolkit",client:"Norrsken Foundation",s:"JavaScript · HTML Canvas",img:"new-thumbs/gif-generators.gif",
+   d:"Seven in-browser text-to-GIF tools built for Norrsken's creative team so they can make animated motion-text themselves - fully client-side, no designer pulled into every small request. A small team made faster, which is most of the job."},
+  {t:"Nina Watching",c:"Live",what:"Real-time media tracker",client:"Personal",s:"Next.js · Postgres · Jellyfin API",img:"images/nina-watching.gif",
+   d:"A live widget showing whatever Nina is watching on the home media server in real time, backed by Jellyfin. Equal parts useful and affectionate - a piece of ambient, personal software."},
+  {t:"Jobb-agent",c:"Agent",what:"Autonomous job-application agent",client:"Self-initiated",s:"Bun · TypeScript · Hono · Claude API",img:"images/jobbtrackarn.gif",
+   d:"An agent that scrapes the national job board every day, scores each role against a profile, and drafts a tailored cover letter for the best matches - automating the boring middle of the job hunt end to end. (Yes, including this one.)"},
+  {t:"Brooke Colorhan",c:"Design",what:"Interactive palette explorer",client:"Brooke Colorhan",s:"Bun · Hono · SQLite · Claude API",img:"images/brooke-colorhan.gif",
+   d:"An interactive colour-palette explorer that doubles as the live colour system behind the Brooke Colorhan brand identity - a design system shipped as a usable tool rather than a static spec sheet."},
+  {t:"Connect Four",c:"Game",what:"Browser game",client:"Self-initiated",s:"Vanilla JS · HTML",img:"images/connect-four.gif",
+   d:"Connect Four in the browser, built for nothing but the puzzle - clean, fast, zero dependencies. Some days the logic clicking into place is the entire point."},
+  {t:"Time Squares",c:"App",what:"Alternative clock",client:"Self-initiated",s:"Vanilla JS",img:"new-thumbs/Timessquare.gif",
+   d:"An alternative timekeeping device that tells the time the wrong way on purpose - a small experiment in whether you can read time from something other than two hands and twelve numbers. Figure it out."},
+  {t:"Calles Hearing Loures",c:"Site",what:"90s tribute site",client:"Commission - a friend",s:"HTML · CSS",img:"images/calleshearinglouresv2.jpg",
+   d:"A deliberately 90s-flavoured joke site made for friends in the in-ear-monitor community - fast, silly and lovingly low-fi. Real brief, real friends, no pretension."},
+  {t:"Photos",c:"Portfolio",what:"Photo portfolio & print shop",client:"Self-initiated",s:"Next.js · Tailwind v4 · Framer Motion",img:"images/photosv2.jpg",
+   d:"A photography portfolio and print shop built on a single rule: nothing on the page but images and prices. A masonry of work, DM Mono captions and a checkout - restraint as the whole concept."},
+  {t:"RiRi",c:"Site",what:"Restaurant website",client:"RiRi · Bio Rio, Stockholm",s:"Framer · Bokabord integration",img:"images/riri.png",
+   d:"A photography-led, menu-forward site for RiRi, the restaurant inside Stockholm's Bio Rio, with live table booking wired in through Bokabord. Built fast as a side gig - a real client with a real deadline."},
+  {t:"IEMdb",c:"Database",what:"In-ear-monitor database",client:"Self-initiated",s:"Next.js · TypeScript · Tailwind",img:"images/iemdb.gif",
+   d:"A filterable database of in-ear monitors for the audio-obsessed, with specs, frequency graphs and a custom fit-scoring system that predicts how well a given shell will physically sit in your ear. A niche made searchable."},
+  {t:"Second Brain",c:"System",what:"AI-readable knowledge vault",client:"Self-initiated",s:"Git · Obsidian · Intel NUC",img:"new-thumbs/second-brain.jpeg",
+   d:"A version-controlled, AI-readable knowledge vault - the memory layer his agents read from. Plain markdown files under git on a home NUC, so the system that remembers is something he fully owns and can diff."},
+];
+const URLS={"kp-cards":"projects/kp-cards/","Pile":"projects/pile/","Gif-Generators":"nina/gif-generators/","Nina Watching":"projects/nina-watching/","Jobb-agent":"projects/jobb-agent/","Brooke Colorhan":"projects/brooke-colorhan/","Connect Four":"projects/connect-four/","Time Squares":"projects/time-squares/","Calles Hearing Loures":"projects/calleshearingloures/","Photos":"photos/","RiRi":"https://fine-goal-048989.framer.app/","IEMdb":"projects/iemdb/","Second Brain":"second-brain-guide/"};
+P.forEach((p,i)=>{const u=URLS[p.t]||"";p.url=u.startsWith("http")?u:BASE+u;p.idx=i;});
+const FEAT=[1,0,2,4,11];
+
+/* BOOT */
+(function(){const b=document.getElementById("boot");const end=()=>{b.classList.add("done");document.dispatchEvent(new CustomEvent("bootdone"));};setTimeout(end,2100);b.addEventListener("click",end,{once:true});})();
+
+const desk=document.getElementById("desktop");
+let zTop=10;
+
+function draggable(el,handle){
+  let sx,sy,ox,oy,on=false;
+  handle.addEventListener("pointerdown",e=>{
+    if(e.button)return;if(e.target.closest(".close,.cell,.cap b,input,button,a,canvas"))return;
+    if(el.classList.contains("anchored"))return;
+    on=true;el.style.zIndex=++zTop;handle.classList.add("grab");
+    document.querySelectorAll(".win").forEach(w=>w.classList.add("inactive"));el.classList.remove("inactive");
+    sx=e.clientX;sy=e.clientY;ox=parseFloat(el.style.left);oy=parseFloat(el.style.top);handle.setPointerCapture(e.pointerId);
+  });
+  handle.addEventListener("pointermove",e=>{if(!on)return;el.style.left=(ox+e.clientX-sx)+"px";el.style.top=(oy+e.clientY-sy)+"px";});
+  const up=()=>{on=false;handle.classList.remove("grab");};
+  handle.addEventListener("pointerup",up);handle.addEventListener("pointercancel",up);
+}
+function focusWin(el){el.style.zIndex=++zTop;document.querySelectorAll(".win").forEach(w=>w.classList.add("inactive"));el.classList.remove("inactive");}
+function makeResizable(el,minW,minH){
+  const grip=document.createElement("div");grip.className="rgrip";el.appendChild(grip);
+  let sx,sy,w0,h0,on=false;
+  grip.addEventListener("pointerdown",e=>{e.stopPropagation();on=true;el.style.zIndex=++zTop;focusWin(el);
+    sx=e.clientX;sy=e.clientY;w0=el.offsetWidth;h0=el.offsetHeight;grip.setPointerCapture(e.pointerId);});
+  grip.addEventListener("pointermove",e=>{if(!on)return;
+    el.style.width=Math.max(minW,w0+e.clientX-sx)+"px";el.style.height=Math.max(minH,h0+e.clientY-sy)+"px";});
+  const up=()=>on=false;grip.addEventListener("pointerup",up);grip.addEventListener("pointercancel",up);
+}
+function win(id,title,bodyHTML,x,y,cls){
+  const el=document.createElement("div");el.className="win opening "+(cls||"");el.id="win-"+id;
+  el.style.left=x+"px";el.style.top=y+"px";el.style.zIndex=++zTop;
+  el.innerHTML=`<div class="tb"><span class="pad"></span><span class="title">${title}</span><span class="close">×</span></div><div class="body">${bodyHTML}</div>`;
+  desk.appendChild(el);draggable(el,el.querySelector(".tb"));
+  el.querySelector(".close").addEventListener("click",()=>{el.style.display="none";});
+  el.addEventListener("pointerdown",()=>focusWin(el));
+  setTimeout(()=>el.classList.remove("opening"),200);
+  return el;
+}
+function openWin(id){const el=document.getElementById("win-"+id);if(el){el.style.display="";el.classList.add("opening");setTimeout(()=>el.classList.remove("opening"),200);focusWin(el);if(id==="fm")playStatic(420);if(id==="ask")popChime();}}
+function playStatic(dur){const cv=document.getElementById("galStatic");if(!cv)return;dur=dur||260;cv.style.opacity="1";
+  const ctx=cv.getContext("2d"),w=cv.width,h=cv.height,t0=performance.now();
+  (function frame(){const id=ctx.createImageData(w,h),d=id.data;
+    for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+    ctx.putImageData(id,0,0);
+    if(performance.now()-t0<dur)requestAnimationFrame(frame);else cv.style.opacity="0";})();}
+function icon(label,glyph,onOpen){
+  const el=document.createElement("div");el.className="dicon";
+  el.innerHTML=`<div class="glyph"><div class="${glyph}"></div></div><span class="lbl">${label}</span>`;
+  desk.appendChild(el);draggable(el,el);
+  el.addEventListener("dblclick",onOpen);
+  el.addEventListener("pointerdown",()=>{document.querySelectorAll(".dicon").forEach(d=>d.classList.remove("sel"));el.classList.add("sel");});
+  return el;
+}
+
+/* CV / Experience */
+win("cv","Experience.txt",`
+  <div class="cvrow"><div class="cvco">Rio</div><div class="cvti"><b>Creative / Web Designer · UX</b> &nbsp;·&nbsp; Jan 2025 – present · Stockholm</div><div class="cvde">Web design, UX/UI, Figma component library and social for Bio Rio, Rio Productions, Rio Distribution and RiRi Restaurant.</div></div>
+  <div class="cvrow"><div class="cvco">Coya · Bleech · Berlin Bytes</div><div class="cvti"><b>Frontend Developer / UX Designer</b> &nbsp;·&nbsp; Jun 2018 – Dec 2020 · Berlin</div><div class="cvde">Component and web development for InsurTech startup Coya (Elm, Node.js, REST APIs). UX/UI for design agency and tech media.</div></div>
+  <div class="cvrow"><div class="cvco">Ljudbang · Sveriges Radio · UR</div><div class="cvti"><b>Podcast Producer</b> &nbsp;·&nbsp; Apr – Dec 2024 · Stockholm</div><div class="cvde">Production assistant on SR's Julkalendern 2024. Full audiobook production. Introduced AI tools into the production workflow.</div></div>
+  <div class="cvrow"><div class="cvco">Hyper Island</div><div class="cvti"><b>Facilitator / Workshop Leader</b> &nbsp;·&nbsp; 2015 – 2016 · Stockholm</div><div class="cvde">Workshops on creativity, team dynamics and digital strategy.</div></div>
+  <div class="cvrow"><div class="cvco">KPEG Studios</div><div class="cvti"><b>Freelance Web Designer / UX·UI</b> &nbsp;·&nbsp; 2015 – present · Stockholm & Berlin</div><div class="cvde">Web design, UX/UI and brand identity for independent clients.</div></div>
+`,700,200,"cv");
+document.getElementById("win-cv").style.display="none";
+
+/* About */
+win("about","About _Patrick.txt",`
+  <div class="doc">
+    <h1>Patrick<br>Gårdinger</h1>
+    <div class="role">design engineer · sthlm</div>
+    <p>Design engineer building AI-native products end to end.</p>
+    <p><span class="cl">Clients include:</span> Rio, Norrsken, Hyper Island, Ljudbang, Coya, Bleech, RiRi.<span class="cur"></span></p>
+  </div>`,24,24,"about");
+
+/* Selected Work - filterable index */
+const catNames=["All","App","Tool","Agent","Live","Design","Game","Site","Portfolio","Database","System"];
+const cliNames=["All clients","Client work","Self-initiated"];
+let catIdx=0,cliIdx=0,query="";
+const sw=win("work","Selected Work",`
+  <div class="ixtools">
+    <div class="trow">
+      <div class="capsel"><span class="lbl" id="catLbl">All categories</span><span class="step"><button class="up" data-sel="cat" data-d="1">▲</button><button class="dn" data-sel="cat" data-d="-1">▼</button></span></div>
+      <div class="capsel"><span class="lbl" id="cliLbl">All clients</span><span class="step"><button class="up" data-sel="cli" data-d="1">▲</button><button class="dn" data-sel="cli" data-d="-1">▼</button></span></div>
+    </div>
+    <div class="trow">
+      <input class="ixsearch" id="ixSearch" placeholder="Search name, tech, client…" autocomplete="off">
+      <button class="ixreset" id="ixReset">Reset</button>
+    </div>
+  </div>
+  <div class="ixlist" id="ixList"></div>`,368,150,"finder");
+makeResizable(sw,380,300);
+(function(){
+  const list=sw.querySelector("#ixList"),catLbl=sw.querySelector("#catLbl"),cliLbl=sw.querySelector("#cliLbl"),
+        search=sw.querySelector("#ixSearch"),reset=sw.querySelector("#ixReset");
+  const isClient=p=>!(p.client==="Self-initiated"||p.client==="Personal");
+  const rowHTML=p=>`<div class="ixrow">
+    <div class="ixthumb"><img src="${BASE+p.img}" alt="${p.t}" loading="lazy"></div>
+    <div class="ixmain">
+      <div class="ixtop"><h3>${p.t}</h3><span class="what">${p.what}</span></div>
+      <p class="ixdesc">${p.d}</p>
+    </div>
+    <div class="ixmeta">
+      <div class="client"><span class="mk">Client</span><span class="mv">${p.client}</span></div>
+      <div><span class="mk">Tech</span><span class="mv">${p.s}</span></div>
+      <a class="ixlink" href="${p.url}" target="_blank" rel="noopener">Open project ↗</a>
+    </div></div>`;
+  function doReset(){catIdx=0;cliIdx=0;query="";search.value="";render();}
+  function render(){
+    const cat=catNames[catIdx],cli=cliNames[cliIdx],q=query.toLowerCase().trim();
+    catLbl.textContent=cat==="All"?"All categories":cat;cliLbl.textContent=cli;
+    const f=P.filter(p=>{
+      if(cat!=="All"&&p.c!==cat)return false;
+      const personal=(p.client==="Self-initiated"||p.client==="Personal");
+      if(cli==="Client work"&&personal)return false;if(cli==="Self-initiated"&&!personal)return false;
+      if(q&&!((p.t+" "+p.what+" "+p.s+" "+p.client+" "+p.d).toLowerCase().includes(q)))return false;
+      return true;
+    });
+    f.sort((a,b)=>(isClient(b)-isClient(a))||a.idx-b.idx);   // client work first
+    list.innerHTML=f.length?f.map(rowHTML).join(""):`<div class="ixempty">No projects match.<br><b id="ixClear">Clear filters ↺</b></div>`;
+    const clr=list.querySelector("#ixClear");if(clr)clr.addEventListener("click",doReset);
+  }
+  sw.querySelectorAll(".capsel .step button").forEach(b=>b.addEventListener("click",()=>{const d=+b.dataset.d;if(b.dataset.sel==="cat")catIdx=(catIdx+d+catNames.length)%catNames.length;else cliIdx=(cliIdx+d+cliNames.length)%cliNames.length;render();}));
+  search.addEventListener("input",()=>{query=search.value;render();});reset.addEventListener("click",doReset);render();
+})();
+
+/* project detail windows */
+const projOpened={};
+function openProject(i){const id="proj"+i;if(projOpened[id]){openWin(id);return;}projOpened[id]=true;const p=P[i];
+  win(id,p.t,`<div class="ft"><img src="${BASE+p.img}" alt="${p.t}"></div>
+    <div class="txt"><h3>${p.t}</h3><div class="cat">${p.what}</div>
+      <div class="meta2">Client - ${p.client}<br>Tech - ${p.s}</div>
+      <p>${p.d}</p><a class="visit" href="${p.url}" target="_blank" rel="noopener">Open project ↗</a></div>`,150+(i%5)*26,150+(i%5)*22,"proj");}
+
+/* Photos - gallery of his photography */
+const PBASE="Photos/";
+const PHOTOS=[
+  ["Brand's Planet","BRAND'S PLANET.png"],
+  ["Community Field","Community Field.png"],
+  ["Eel Mountain","EEL MOUNTAIN.png"],
+  ["Floor is Lava","FLOOR IS LAVA.png"],
+  ["Man in Black","MAN IN BLACK.png"],
+  ["Mobila Sektionen","MOBILA SEKTIONEN.png"],
+  ["Paranuit","PARANUIT.png"],
+  ["Petrichor Formation","PETRICHOR FORMATION.png"],
+  ["Train Break","TRAIN BREAK.png"],
+  ["U-Ride","U-RIDE.png"],
+  ["Wedding Wrestling","WEDDING WRESTLING.png"],
+];
+const gal=win("fm","Photo Gallery",`
+  <div class="scr" id="galScr"><img id="galImg" alt=""><div class="ph" id="galPh"></div><canvas class="static" id="galStatic" width="170" height="113"></canvas></div>
+<div class="ctrls"><button id="galPrev">◀</button><button id="galNext">▶</button></div>
+  <div class="note">photography · <a href="https://kpeg.se/photos/" target="_blank" rel="noopener" style="color:inherit">kpeg.se/photos ↗</a></div>`,60,560,"fm gal");
+(function(){
+  let i=0;
+  const img=gal.querySelector("#galImg"),scr=gal.querySelector("#galScr"),ph=gal.querySelector("#galPh");
+  img.onerror=()=>{scr.classList.add("noimg");};
+  img.onload=()=>{scr.classList.remove("noimg");};
+  function show(){const p=PHOTOS[i];ph.textContent=p[0];img.src=PBASE+encodeURIComponent(p[1]);}
+  function go(d){playStatic(230);i=(i+d+PHOTOS.length)%PHOTOS.length;show();}
+  gal.querySelector("#galPrev").onclick=()=>go(-1);
+  gal.querySelector("#galNext").onclick=()=>go(1);
+  gal.querySelector("#galScr").onclick=()=>go(1);
+  show();document.addEventListener("bootdone",()=>playStatic(4000),{once:true});
+})();
+
+/* Ask Patrick */
+const chat=win("ask","Ask Patrick",`
+  <div class="msgs" id="chatMsgs"></div>
+  <div class="chips" id="chatChips"></div>
+  <div class="inp"><input id="chatInput" placeholder="Ask about Patrick…" autocomplete="off"><button id="chatSend">Ask</button></div>`,330,470,"chat anchored");
+function anchorAsk(){const w=document.getElementById("win-ask");if(!w)return;const aw=w.offsetWidth||288,ah=w.offsetHeight||300;
+  w.style.left=Math.max(8,desk.clientWidth-aw-16)+"px";w.style.top=Math.max(8,desk.clientHeight-ah-14)+"px";}
+(function(){
+  const msgs=chat.querySelector("#chatMsgs"),input=chat.querySelector("#chatInput"),send=chat.querySelector("#chatSend"),chips=chat.querySelector("#chatChips");
+  function add(who,h){const m=document.createElement("div");m.className="m "+(who==="you"?"u":"b");m.innerHTML=`<div class="who">${who}</div><div class="bubble">${h}</div>`;msgs.appendChild(m);msgs.scrollTop=msgs.scrollHeight;}
+  function reply(q){const s=q.toLowerCase();
+    for(const p of P){if(s.includes(p.t.toLowerCase()))return `<b>${p.t}</b> - ${p.what.toLowerCase()}. ${p.d} <a href="${p.url}" target="_blank" rel="noopener">Open ↗</a>`;}
+    if(/(avail|hire|hiring|freelan|work with|join|open to|recruit)/.test(s))return `Yes - he'd rather build alongside a team than perfect a cover letter alone. <a href="mailto:hi@kpeg.se">hi@kpeg.se</a> or <a href="https://linkedin.com/in/patrickgardinger" target="_blank" rel="noopener">LinkedIn ↗</a>.`;
+    if(/(contact|email|reach|touch|linkedin)/.test(s))return `<a href="mailto:hi@kpeg.se">hi@kpeg.se</a> · <a href="https://linkedin.com/in/patrickgardinger" target="_blank" rel="noopener">linkedin.com/in/patrickgardinger ↗</a>`;
+    if(/\bai\b|machine learning|\bllm\b|claude|agent|automat/.test(s))return `AI runs through everything he makes: <b>Gif-Generators</b> (client-side text-to-GIF for Norrsken), <b>Jobb-agent</b> (an autonomous job-application agent on the Claude API) and <b>Second Brain</b> (an AI-readable memory layer his agents read from). At Rio he points AI at templated design systems to scale output ~10×.`;
+    if(/(strong|best|favou?rite|impressive|top|proud|highlight|cool)/.test(s))return `Probably <b>Pile</b>, <b>Gif-Generators</b> and <b>Jobb-agent</b> - they're the app icons on the desk. The Selected Work index filters all 13.`;
+    if(/(tech|stack|tools|language|framework|build with|code)/.test(s))return `Mostly Next.js, TypeScript, SvelteKit and Vanilla JS; Tailwind; SQLite / Postgres; Bun + Hono; the Claude API. He self-hosts plenty on home ARM64 / Intel NUC boxes.`;
+    if(/\brio\b/.test(s))return `At Rio he works in design and content - making good design repeat itself: turning one-off work into systems, then using AI to run them. Output up ~10×.`;
+    if(/(cv|resume|résumé|experience|background)/.test(s))return `There's no tidy CV - "the work moved faster than the formatting." This desk is the record of how he thinks; the Selected Work index lists every project with client, tech and an explanation.`;
+    if(/(who|what does|about|do you do|introduce|design engineer)/.test(s))return `Patrick Gårdinger is a design engineer in Stockholm, working in the overlap of design, code and applied AI. He builds tools that let small teams do more - and can't really stop.`;
+    if(/(photo|photography|gallery|picture|camera|shoot)/.test(s))return `Open the <b>Photos</b> window - a gallery of Patrick's photography. More at <a href="https://kpeg.se/photos/" target="_blank" rel="noopener">kpeg.se/photos ↗</a>.`;
+    if(/^(hi|hey|hello|yo|sup)\b/.test(s))return `Hi! Ask what Patrick does, his AI work, his strongest projects, his stack, or whether he's available.`;
+    return `Good question. Try the Selected Work index, or email <a href="mailto:hi@kpeg.se">hi@kpeg.se</a>. Ask me: his AI work · strongest project · is he available?`;
+  }
+  function ask(q){q=(q||"").trim();if(!q)return;add("you",q);input.value="";setTimeout(()=>add("patrick.ai",reply(q)),420);}
+  send.onclick=()=>ask(input.value);input.addEventListener("keydown",e=>{if(e.key==="Enter")ask(input.value);});
+  ["What does he do?","His AI work","Strongest project?","His photos"].forEach(t=>{const c=document.createElement("span");c.className="qchip";c.textContent=t;c.onclick=()=>ask(t);chips.appendChild(c);});
+  add("patrick.ai","Hi - I'm a little bot that knows Patrick. Ask me anything, or tap a suggestion.");
+})();
+
+/* Puzzle - Connect Four vs AI */
+const c4=win("c4","Connect Four",`<div class="grid" id="c4grid"></div><div class="cap"><span id="c4stat">You vs Patrick · drop ↓</span><b id="c4reset">Reset</b></div>`,1000,60,"c4w");
+(function(){
+  const R=6,C=7,grid=c4.querySelector("#c4grid"),stat=c4.querySelector("#c4stat");let board,over;
+  function build(){grid.innerHTML="";for(let k=0;k<R*C;k++){const c=document.createElement("div");c.className="cell";c.dataset.i=k;grid.appendChild(c);}}
+  function at(b,r,c){return (r>=0&&r<R&&c>=0&&c<C)?b[r*C+c]:0;}
+  function wn(b,pl){const D=[[0,1],[1,0],[1,1],[1,-1]];for(let r=0;r<R;r++)for(let c=0;c<C;c++){if(at(b,r,c)!==pl)continue;for(const[dr,dc]of D){let n=1;while(at(b,r+dr*n,c+dc*n)===pl)n++;if(n>=4)return true;}}return false;}
+  function drop(b,col,pl){const n=b.slice();for(let r=R-1;r>=0;r--){if(!n[r*C+col]){n[r*C+col]=pl;return {b:n,r};}}return null;}
+  function paint(r,col,pl){const d=document.createElement("div");d.className="disc "+(pl===1?"a":"b");grid.children[r*C+col].appendChild(d);}
+  function valid(b){const v=[];for(let c=0;c<C;c++)if(!b[c])v.push(c);return v;}
+  function ai(b){const v=valid(b);for(const c of v){const m=drop(b,c,2);if(m&&wn(m.b,2))return c;}for(const c of v){const m=drop(b,c,1);if(m&&wn(m.b,1))return c;}const mid=[3,2,4,1,5,0,6].filter(c=>v.includes(c));return mid[0]??v[0];}
+  function reset(){board=Array(R*C).fill(0);over=false;build();stat.textContent="You vs Patrick · drop ↓";}
+  grid.addEventListener("click",e=>{const cell=e.target.closest(".cell");if(!cell||over)return;const col=(+cell.dataset.i)%C;const m=drop(board,col,1);if(!m)return;board=m.b;paint(m.r,col,1);
+    if(wn(board,1)){stat.innerHTML="<span class='win'>You win ✦</span>";over=true;return;}if(!valid(board).length){stat.textContent="Draw.";over=true;return;}
+    setTimeout(()=>{const c=ai(board);const m2=drop(board,c,2);board=m2.b;paint(m2.r,c,2);if(wn(board,2)){stat.innerHTML="<span class='win'>Patrick wins</span>";over=true;}else if(!valid(board).length){stat.textContent="Draw.";over=true;}},340);
+  });
+  c4.querySelector("#c4reset").onclick=reset;reset();
+})();
+
+/* featured project app icons */
+const APPS=FEAT.map(i=>{const el=icon(P[i].t,"ic-app",()=>openProject(i));el.classList.add("app");el.querySelector(".ic-app").innerHTML=`<img src="${BASE+P[i].img}" alt="${P[i].t}">`;return el;});
+function placeIcons(){const RW=desk.clientWidth,RH=desk.clientHeight;APPS.forEach((el,i)=>{el.style.left=(RW-96)+"px";el.style.top=(24+i*92)+"px";});
+  const c4=document.getElementById("win-c4");if(c4){c4.style.left=Math.max(360,RW-300)+"px";c4.style.top="60px";}}
+placeIcons();anchorAsk();addEventListener("resize",()=>{clearTimeout(window._ri);window._ri=setTimeout(()=>{placeIcons();anchorAsk();},160);});
+
+/* DOCK */
+const DOCK=[["RM","Read","about"],["WK","Work","work"],["AI","Ask","ask"],["PH","Gallery","fm"],["C4","Play","c4"]];
+const dock=document.getElementById("dock");
+DOCK.forEach(([g,n,id])=>{const b=document.createElement("button");b.innerHTML=`<span class="g">${g}</span><span class="n">${n}</span>`;b.onclick=()=>openWin(id);dock.appendChild(b);});
+const dcontact=document.createElement("a");dcontact.className="dcontact";dcontact.href="mailto:hi@kpeg.se";dcontact.textContent="Contact Patrick";dock.appendChild(dcontact);
+
+
+/* Menubar dropdowns */
+(function(){
+  const menus=["menuFile","menuEdit","menuView"].map(id=>document.getElementById(id));
+  function closeAll(){menus.forEach(m=>m.classList.remove("open"));}
+  function isAnyOpen(){return menus.some(m=>m.classList.contains("open"));}
+  menus.forEach(m=>{
+    m.addEventListener("click",e=>{if(e.target.closest("a"))return;const was=m.classList.contains("open");closeAll();if(!was)m.classList.add("open");});
+    m.addEventListener("mouseenter",()=>{if(isAnyOpen()&&!m.classList.contains("open")){closeAll();m.classList.add("open");}});
+  });
+  document.addEventListener("pointerdown",e=>{if(!e.target.closest(".has-drop"))closeAll();});
+  document.getElementById("menuCvLink").addEventListener("click",e=>{e.preventDefault();closeAll();openWin("cv");});
+})();
+
+/* Special - confetti */
+(function(){
+  const COLORS=["#03FFC7","#FFF8E6","#012FA5","#0480FF","#FDFCB9","#EBA0E4","#02C8FB"];
+  document.getElementById("menuSpecial").addEventListener("click",()=>{
+    const cv=document.createElement("canvas");
+    cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none";
+    document.body.appendChild(cv);
+    cv.width=window.innerWidth;cv.height=window.innerHeight;
+    const ctx=cv.getContext("2d");
+    const pieces=Array.from({length:220},()=>({
+      x:Math.random()*cv.width,y:-10-Math.random()*300,
+      w:6+Math.random()*8,h:10+Math.random()*6,
+      r:Math.random()*Math.PI*2,dr:(Math.random()-.5)*.18,
+      vx:(Math.random()-.5)*3,vy:2+Math.random()*4,
+      col:COLORS[Math.floor(Math.random()*COLORS.length)],
+      wave:Math.random()*Math.PI*2,waveAmp:1+Math.random()*2
+    }));
+    let t=0;
+    function frame(){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      t++;
+      let alive=false;
+      for(const p of pieces){
+        p.y+=p.vy;p.vy+=.07;
+        p.x+=p.vx+Math.sin(p.wave+t*.04)*p.waveAmp;
+        p.r+=p.dr;
+        if(p.y<cv.height+20)alive=true;
+        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);
+        ctx.fillStyle=p.col;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+        ctx.restore();
+      }
+      if(alive)requestAnimationFrame(frame);else cv.remove();
+    }
+    requestAnimationFrame(frame);
+  });
+})();
+
+/* menu clock */
+function tick(){const d=new Date();let h=d.getHours();const ap=h>=12?"PM":"AM";h=h%12||12;const p=n=>String(n).padStart(2,"0");
+  document.getElementById("clock").textContent=h+":"+p(d.getMinutes())+" "+ap;}
+setInterval(tick,1000);tick();
+
+document.querySelectorAll(".win").forEach(w=>w.classList.add("inactive"));sw.classList.remove("inactive");
+
+/* Ask Patrick: hidden, then pops in after 5s with a chime */
+let actx=null;
+function unlockAudio(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume();}catch(e){}}
+["pointerdown","keydown"].forEach(ev=>addEventListener(ev,unlockAudio));
+function whiteNoise(dur,vol){
+  if(!actx||actx.state!=="running")return;dur=dur||0.16;vol=vol||0.12;
+  const sr=actx.sampleRate,n=Math.floor(sr*dur),buf=actx.createBuffer(1,n,sr),d=buf.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const src=actx.createBufferSource();src.buffer=buf;
+  const hp=actx.createBiquadFilter();hp.type="highpass";hp.frequency.value=900;
+  const g=actx.createGain();const t=actx.currentTime;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(0.0005,t+dur);
+  src.connect(hp);hp.connect(g);g.connect(actx.destination);src.start(t);src.stop(t+dur+0.02);
+}
+function chimeNow(){
+  const t=actx.currentTime;
+  [[523.25,0],[659.25,0.085],[783.99,0.17],[1046.50,0.255]].forEach(([f,dt])=>{
+    const o=actx.createOscillator(),o2=actx.createOscillator(),g=actx.createGain();
+    o.type="triangle";o2.type="sine";o.frequency.value=f;o2.frequency.value=f*2;
+    o.connect(g);o2.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(0,t+dt);g.gain.linearRampToValueAtTime(0.26,t+dt+0.01);g.gain.exponentialRampToValueAtTime(0.0006,t+dt+0.22);
+    o.start(t+dt);o2.start(t+dt);o.stop(t+dt+0.24);o2.stop(t+dt+0.24);});
+}
+function popChime(){
+  if(actx&&actx.state==="running"){chimeNow();return;}
+  const fire=()=>{unlockAudio();setTimeout(()=>{if(actx&&actx.state==="running")chimeNow();},80);
+    removeEventListener("pointerdown",fire);removeEventListener("keydown",fire);};
+  addEventListener("pointerdown",fire,{once:true});addEventListener("keydown",fire,{once:true});
+}
+chat.style.display="none";
+let askPopped=false;
+function popAsk(){
+  if(askPopped)return;askPopped=true;
+  if(chat.style.display!=="none")return;   // user already opened it from the dock
+  chat.style.display="";chat.classList.remove("opening");anchorAsk();chat.style.zIndex=++zTop;
+  chat.classList.add("popin");setTimeout(()=>chat.classList.remove("popin"),520);
+  popChime();
+}
+setTimeout(popAsk,5000);
+</script>
+</body>
+</html>
