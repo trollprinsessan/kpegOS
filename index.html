@@ -448,7 +448,7 @@ const PHOTOS=[
 const gal=win("fm","Photo Gallery",`
   <div class="scr" id="galScr"><img id="galImg" alt=""><div class="ph" id="galPh"></div><canvas class="static" id="galStatic" width="170" height="113"></canvas></div>
 <div class="ctrls"><button id="galPrev">◀</button><span id="galLabel" style="flex:2;text-align:center;font-family:var(--display);font-weight:900;font-size:10px;padding:4px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">-</span><button id="galNext">▶</button></div>
-  <div class="note">photography · <a href="https://kpeg.se/photos/" target="_blank" rel="noopener" style="color:inherit">kpeg.se/photos ↗</a></div>`,60,560,"fm gal");
+  <div class="note"><a href="https://kpeg.se/photos/" target="_blank" rel="noopener" style="color:inherit">kpeg.se/photos ↗</a></div>`,60,560,"fm gal");
 (function(){
   let i=0;
   const img=gal.querySelector("#galImg"),scr=gal.querySelector("#galScr"),ph=gal.querySelector("#galPh"),lbl=gal.querySelector("#galLabel");
