@@ -117,8 +117,7 @@
   .fm .meta .nm{font-family:var(--display);font-weight:900;font-size:16px;letter-spacing:-.015em}
   .fm .meta .ct{font-size:10px;color:var(--grey);white-space:nowrap}
   .fm .ctrls{display:flex}
-  .fm .ctrls button{flex:1;border:0;border-right:1px solid var(--line2);background:#fff;padding:6px;font-size:12px;cursor:pointer}
-  .fm .ctrls button:last-child{border-right:0}
+  .fm .ctrls button{flex:1;border:0;background:#fff;padding:6px;font-size:12px;cursor:pointer}
   .fm .ctrls button:hover{background:#f4f5f6}
   .fm .ctrls button.play{font-family:var(--display);font-weight:900;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:2}
   .fm .ctrls button.play.on{background:var(--red);color:#fff}
@@ -448,7 +447,7 @@ const PHOTOS=[
 ];
 const gal=win("fm","Photo Gallery",`
   <div class="scr" id="galScr"><img id="galImg" alt=""><div class="ph" id="galPh"></div><canvas class="static" id="galStatic" width="170" height="113"></canvas></div>
-<div class="ctrls"><button id="galPrev">◀</button><span id="galLabel" style="flex:2;text-align:center;font-family:var(--display);font-weight:900;font-size:10px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--line2)">-</span><button id="galNext">▶</button></div>
+<div class="ctrls"><button id="galPrev">◀</button><span id="galLabel" style="flex:2;text-align:center;font-family:var(--display);font-weight:900;font-size:10px;padding:4px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">-</span><button id="galNext">▶</button></div>
   <div class="note">photography · <a href="https://kpeg.se/photos/" target="_blank" rel="noopener" style="color:inherit">kpeg.se/photos ↗</a></div>`,60,560,"fm gal");
 (function(){
   let i=0;
